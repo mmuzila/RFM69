@@ -64,7 +64,7 @@ class Radio(object):
         self._reset_radio()
         self._set_config(get_config(freqBand, networkID, nodeID))
         self.encrypt(kwargs.get('encryptionKey', 0))
-        self._setHighPower(self.isRFM69HW)
+        self.setHighPower(self.isRFM69HW)
         self.set_power_level(kwargs.get('power', 70))
 
         # Wait for ModeReady
@@ -420,10 +420,10 @@ class Radio(object):
     def writeReg(self, addr, value):
         self.spi.xfer([addr | 0x80, value])
 
-    def _promiscuous(self, onOff):
+    def promiscuous(self, onOff):
         self.promiscuousMode = onOff
 
-    def _setHighPower(self, onOff):
+    def setHighPower(self, onOff):
         if onOff:
             self.writeReg(REG_OCP, RF_OCP_OFF)
             #enable P1 & P2 amplifier stages
@@ -446,7 +446,7 @@ class Radio(object):
 
         Puts the radio to sleep and cleans up the GPIO connections.
         """
-        self._setHighPower(False)
+        self.setHighPower(False)
         self.sleep()
         self.spi.close();
         GPIO.cleanup()
