@@ -93,18 +93,18 @@ class Radio(object):
         #verify chip is syncing?
         start = time.time()
         while self._readReg(REG_SYNCVALUE1) != 0xAA:
-            self._writeReg(REG_SYNCVALUE1, 0xAA)
+            self.writeReg(REG_SYNCVALUE1, 0xAA)
             if time.time() - start > 15000:
                 raise Exception('Failed to sync with chip')
         start = time.time()
         while self._readReg(REG_SYNCVALUE1) != 0x55:
-            self._writeReg(REG_SYNCVALUE1, 0x55)
+            self.writeReg(REG_SYNCVALUE1, 0x55)
             if time.time() - start > 15000:
                 raise Exception('Failed to sync with chip')
 
     def _set_config(self, config):
         for value in config.values():
-            self._writeReg(value[0], value[1])
+            self.writeReg(value[0], value[1])
 
     def _init_interrupt(self):
         GPIO.remove_event_detect(self.intPin)
@@ -131,9 +131,9 @@ class Radio(object):
 
     def set_frequency(self, FRF):
         """Set the radio frequency"""
-        self._writeReg(REG_FRFMSB, FRF >> 16)
-        self._writeReg(REG_FRFMID, FRF >> 8)
-        self._writeReg(REG_FRFLSB, FRF)
+        self.writeReg(REG_FRFMSB, FRF >> 16)
+        self.writeReg(REG_FRFMID, FRF >> 8)
+        self.writeReg(REG_FRFLSB, FRF)
 
     def sleep(self):
         """Put the radio into sleep mode"""
@@ -148,7 +148,7 @@ class Radio(object):
         """
         assert type(network_id) == int
         assert network_id > 0 and network_id < 255
-        self._writeReg(REG_SYNCVALUE2, network_id)
+        self.writeReg(REG_SYNCVALUE2, network_id)
 
     def set_power_level(self, percent):
         """Set the transmit power level
@@ -159,11 +159,11 @@ class Radio(object):
         """
         assert type(percent) == int
         self.powerLevel = int( round(31 * (percent / 100)))
-        self._writeReg(REG_PALEVEL, (self._readReg(REG_PALEVEL) & 0xE0) | self.powerLevel)
+        self.writeReg(REG_PALEVEL, (self._readReg(REG_PALEVEL) & 0xE0) | self.powerLevel)
 
 
     def _send(self, toAddress, buff = "", requestACK = False):
-        self._writeReg(REG_PACKETCONFIG2, (self._readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART)
+        self.writeReg(REG_PACKETCONFIG2, (self._readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART)
         now = time.time()
         while (not self._canSend()) and time.time() - now < RF69_CSMA_LIMIT_S:
             self.has_received_packet()
@@ -228,7 +228,7 @@ class Radio(object):
             int: Temperature in centigrade
         """
         self._setMode(RF69_MODE_STANDBY)
-        self._writeReg(REG_TEMP1, RF_TEMP1_MEAS_START)
+        self.writeReg(REG_TEMP1, RF_TEMP1_MEAS_START)
         while self._readReg(REG_TEMP1) & RF_TEMP1_MEAS_RUNNING:
             pass
         # COURSE_TEMP_COEF puts reading in the ballpark, user can add additional correction
@@ -241,7 +241,7 @@ class Radio(object):
 
         See RFM69 datasheet section [4.3.5. RC Timer Accuracy] for more information.
         """
-        self._writeReg(REG_OSC1, RF_OSC1_RCCAL_START)
+        self.writeReg(REG_OSC1, RF_OSC1_RCCAL_START)
         while self._readReg(REG_OSC1) & RF_OSC1_RCCAL_DONE == 0x00:
             pass
 
@@ -263,9 +263,9 @@ class Radio(object):
 
         if (self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY):
             # avoid RX deadlocks
-            self._writeReg(REG_PACKETCONFIG2, (self._readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART)
+            self.writeReg(REG_PACKETCONFIG2, (self._readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART)
         #set DIO0 to "PAYLOADREADY" in receive mode
-        self._writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_01)
+        self.writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_01)
         self._setMode(RF69_MODE_RX)
 
     def has_received_packet(self):
@@ -310,23 +310,23 @@ class Radio(object):
             return
         if newMode == RF69_MODE_TX:
             self.mode_name = "TX"
-            self._writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER)
+            self.writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER)
             if self.isRFM69HW:
                 self._setHighPowerRegs(True)
         elif newMode == RF69_MODE_RX:
             self.mode_name = "RX"
-            self._writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_RECEIVER)
+            self.writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_RECEIVER)
             if self.isRFM69HW:
                 self._setHighPowerRegs(False)
         elif newMode == RF69_MODE_SYNTH:
             self.mode_name = "Synth"
-            self._writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SYNTHESIZER)
+            self.writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SYNTHESIZER)
         elif newMode == RF69_MODE_STANDBY:
             self.mode_name = "Standby"
-            self._writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_STANDBY)
+            self.writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_STANDBY)
         elif newMode == RF69_MODE_SLEEP:
             self.mode_name = "Sleep"
-            self._writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP)
+            self.writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP)
         else:
             self.mode_name = "Unknown"
             return
@@ -338,7 +338,7 @@ class Radio(object):
 
     def _setAddress(self, addr):
         self.address = addr
-        self._writeReg(REG_NODEADRS, self.address)
+        self.writeReg(REG_NODEADRS, self.address)
 
     def _canSend(self):
         if self.mode == RF69_MODE_STANDBY:
@@ -368,7 +368,7 @@ class Radio(object):
         while (self._readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00:
             pass
         # DIO0 is "Packet Sent"
-        self._writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_00)
+        self.writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_00)
 
         if (len(buff) > RF69_MAX_DATA_LEN):
             buff = buff[0:RF69_MAX_DATA_LEN]
@@ -396,7 +396,7 @@ class Radio(object):
     def _readRSSI(self, forceTrigger = False):
         rssi = 0
         if forceTrigger:
-            self._writeReg(REG_RSSICONFIG, RF_RSSI_START)
+            self.writeReg(REG_RSSICONFIG, RF_RSSI_START)
             while self._readReg(REG_RSSICONFIG) & RF_RSSI_DONE == 0x00:
                 pass
         rssi = self._readReg(REG_RSSIVALUE) * -1
@@ -407,14 +407,14 @@ class Radio(object):
         self._setMode(RF69_MODE_STANDBY)
         if key != 0 and len(key) == 16:
             self.spi.xfer([REG_AESKEY1 | 0x80] + [int(ord(i)) for i in list(key)])
-            self._writeReg(REG_PACKETCONFIG2,(self._readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_ON)
+            self.writeReg(REG_PACKETCONFIG2,(self._readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_ON)
         else:
-            self._writeReg(REG_PACKETCONFIG2,(self._readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_OFF)
+            self.writeReg(REG_PACKETCONFIG2,(self._readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_OFF)
 
     def _readReg(self, addr):
         return self.spi.xfer([addr & 0x7F, 0])[1]
 
-    def _writeReg(self, addr, value):
+    def writeReg(self, addr, value):
         self.spi.xfer([addr | 0x80, value])
 
     def _promiscuous(self, onOff):
@@ -422,21 +422,21 @@ class Radio(object):
 
     def _setHighPower(self, onOff):
         if onOff:
-            self._writeReg(REG_OCP, RF_OCP_OFF)
+            self.writeReg(REG_OCP, RF_OCP_OFF)
             #enable P1 & P2 amplifier stages
-            self._writeReg(REG_PALEVEL, (self._readReg(REG_PALEVEL) & 0x1F) | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_ON)
+            self.writeReg(REG_PALEVEL, (self._readReg(REG_PALEVEL) & 0x1F) | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_ON)
         else:
-            self._writeReg(REG_OCP, RF_OCP_ON)
+            self.writeReg(REG_OCP, RF_OCP_ON)
             #enable P0 only
-            self._writeReg(REG_PALEVEL, RF_PALEVEL_PA0_ON | RF_PALEVEL_PA1_OFF | RF_PALEVEL_PA2_OFF | powerLevel)
+            self.writeReg(REG_PALEVEL, RF_PALEVEL_PA0_ON | RF_PALEVEL_PA1_OFF | RF_PALEVEL_PA2_OFF | powerLevel)
 
     def _setHighPowerRegs(self, onOff):
         if onOff:
-            self._writeReg(REG_TESTPA1, 0x5D)
-            self._writeReg(REG_TESTPA2, 0x7C)
+            self.writeReg(REG_TESTPA1, 0x5D)
+            self.writeReg(REG_TESTPA2, 0x7C)
         else:
-            self._writeReg(REG_TESTPA1, 0x55)
-            self._writeReg(REG_TESTPA2, 0x70)
+            self.writeReg(REG_TESTPA1, 0x55)
+            self.writeReg(REG_TESTPA2, 0x70)
 
     def _shutdown(self):
         """Shutdown the radio.
