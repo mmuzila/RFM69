@@ -63,7 +63,7 @@ class Radio(object):
         self._init_gpio()
         self._reset_radio()
         self._set_config(get_config(freqBand, networkID, nodeID))
-        self._encrypt(kwargs.get('encryptionKey', 0))
+        self.encrypt(kwargs.get('encryptionKey', 0))
         self._setHighPower(self.isRFM69HW)
         self.set_power_level(kwargs.get('power', 70))
 
@@ -403,7 +403,7 @@ class Radio(object):
         rssi = rssi >> 1
         return rssi
 
-    def _encrypt(self, key):
+    def encrypt(self, key):
         self._setMode(RF69_MODE_STANDBY)
         if key != 0 and len(key) == 16:
             self.spi.xfer([REG_AESKEY1 | 0x80] + [int(ord(i)) for i in list(key)])
