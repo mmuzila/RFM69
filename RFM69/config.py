@@ -5,7 +5,7 @@ frfMSB = {RF69_315MHZ: RF_FRFMSB_315, RF69_433MHZ: RF_FRFMSB_433, RF69_868MHZ: R
 frfMID = {RF69_315MHZ: RF_FRFMID_315, RF69_433MHZ: RF_FRFMID_433, RF69_868MHZ: RF_FRFMID_868, RF69_915MHZ: RF_FRFMID_915}
 frfLSB = {RF69_315MHZ: RF_FRFLSB_315, RF69_433MHZ: RF_FRFLSB_433, RF69_868MHZ: RF_FRFLSB_868, RF69_915MHZ: RF_FRFLSB_915}
 
-def get_config(freqBand, networkID):
+def get_config(freqBand, networkID, nodeID):
     return {
           0x01: [REG_OPMODE, RF_OPMODE_SEQUENCER_ON | RF_OPMODE_LISTEN_OFF | RF_OPMODE_STANDBY],
           #no shaping
@@ -48,7 +48,7 @@ def get_config(freqBand, networkID):
                 RF_PACKET1_CRC_ON | RF_PACKET1_CRCAUTOCLEAR_ON | RF_PACKET1_ADRSFILTERING_OFF],
           #in variable length mode: the max frame size, not used in TX
           0x38: [REG_PAYLOADLENGTH, 66],
-          #* 0x39 */ { REG_NODEADRS, nodeID }, //turned off because we're not using address filtering
+          0x39: { REG_NODEADRS, nodeID },
           #TX on FIFO not empty
           0x3C: [REG_FIFOTHRESH, RF_FIFOTHRESH_TXSTART_FIFONOTEMPTY | RF_FIFOTHRESH_VALUE],
           #RXRESTARTDELAY must match transmitter PA ramp-down time (bitrate dependent)
