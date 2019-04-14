@@ -68,7 +68,7 @@ class Radio(object):
         self.set_power_level(kwargs.get('power', 70))
 
         # Wait for ModeReady
-        while (self._readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00:
+        while (self.readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00:
             pass
 
         self._init_interrupt()
@@ -92,12 +92,12 @@ class Radio(object):
         time.sleep(0.3)
         #verify chip is syncing?
         start = time.time()
-        while self._readReg(REG_SYNCVALUE1) != 0xAA:
+        while self.readReg(REG_SYNCVALUE1) != 0xAA:
             self.writeReg(REG_SYNCVALUE1, 0xAA)
             if time.time() - start > 15000:
                 raise Exception('Failed to sync with chip')
         start = time.time()
-        while self._readReg(REG_SYNCVALUE1) != 0x55:
+        while self.readReg(REG_SYNCVALUE1) != 0x55:
             self.writeReg(REG_SYNCVALUE1, 0x55)
             if time.time() - start > 15000:
                 raise Exception('Failed to sync with chip')
@@ -159,11 +159,11 @@ class Radio(object):
         """
         assert type(percent) == int
         self.powerLevel = int( round(31 * (percent / 100)))
-        self.writeReg(REG_PALEVEL, (self._readReg(REG_PALEVEL) & 0xE0) | self.powerLevel)
+        self.writeReg(REG_PALEVEL, (self.readReg(REG_PALEVEL) & 0xE0) | self.powerLevel)
 
 
     def _send(self, toAddress, buff = "", requestACK = False):
-        self.writeReg(REG_PACKETCONFIG2, (self._readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART)
+        self.writeReg(REG_PACKETCONFIG2, (self.readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART)
         now = time.time()
         while (not self._canSend()) and time.time() - now < RF69_CSMA_LIMIT_S:
             self.has_received_packet()
@@ -229,11 +229,11 @@ class Radio(object):
         """
         self._setMode(RF69_MODE_STANDBY)
         self.writeReg(REG_TEMP1, RF_TEMP1_MEAS_START)
-        while self._readReg(REG_TEMP1) & RF_TEMP1_MEAS_RUNNING:
+        while self.readReg(REG_TEMP1) & RF_TEMP1_MEAS_RUNNING:
             pass
         # COURSE_TEMP_COEF puts reading in the ballpark, user can add additional correction
         #'complement'corrects the slope, rising temp = rising val
-        return (int(~self._readReg(REG_TEMP2)) * -1) + COURSE_TEMP_COEF + calFactor
+        return (int(~self.readReg(REG_TEMP2)) * -1) + COURSE_TEMP_COEF + calFactor
 
 
     def calibrate_radio(self):
@@ -242,7 +242,7 @@ class Radio(object):
         See RFM69 datasheet section [4.3.5. RC Timer Accuracy] for more information.
         """
         self.writeReg(REG_OSC1, RF_OSC1_RCCAL_START)
-        while self._readReg(REG_OSC1) & RF_OSC1_RCCAL_DONE == 0x00:
+        while self.readReg(REG_OSC1) & RF_OSC1_RCCAL_DONE == 0x00:
             pass
 
     def read_registers(self):
@@ -253,7 +253,7 @@ class Radio(object):
         """
         results = []
         for address in range(1, 0x50):
-            results.append([str(hex(address)), str(bin(self._readReg(address)))])
+            results.append([str(hex(address)), str(bin(self.readReg(address)))])
         return results
 
     def begin_receive(self):
@@ -261,9 +261,9 @@ class Radio(object):
         while self.intLock:
             time.sleep(.1)
 
-        if (self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY):
+        if (self.readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY):
             # avoid RX deadlocks
-            self.writeReg(REG_PACKETCONFIG2, (self._readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART)
+            self.writeReg(REG_PACKETCONFIG2, (self.readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART)
         #set DIO0 to "PAYLOADREADY" in receive mode
         self.writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_01)
         self._setMode(RF69_MODE_RX)
@@ -310,29 +310,29 @@ class Radio(object):
             return
         if newMode == RF69_MODE_TX:
             self.mode_name = "TX"
-            self.writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER)
+            self.writeReg(REG_OPMODE, (self.readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER)
             if self.isRFM69HW:
                 self._setHighPowerRegs(True)
         elif newMode == RF69_MODE_RX:
             self.mode_name = "RX"
-            self.writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_RECEIVER)
+            self.writeReg(REG_OPMODE, (self.readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_RECEIVER)
             if self.isRFM69HW:
                 self._setHighPowerRegs(False)
         elif newMode == RF69_MODE_SYNTH:
             self.mode_name = "Synth"
-            self.writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SYNTHESIZER)
+            self.writeReg(REG_OPMODE, (self.readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SYNTHESIZER)
         elif newMode == RF69_MODE_STANDBY:
             self.mode_name = "Standby"
-            self.writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_STANDBY)
+            self.writeReg(REG_OPMODE, (self.readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_STANDBY)
         elif newMode == RF69_MODE_SLEEP:
             self.mode_name = "Sleep"
-            self.writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP)
+            self.writeReg(REG_OPMODE, (self.readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP)
         else:
             self.mode_name = "Unknown"
             return
         # we are using packet mode, so this check is not really needed
         # but waiting for mode ready is necessary when going from sleep because the FIFO may not be immediately available from previous mode
-        while self.mode == RF69_MODE_SLEEP and self._readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY == 0x00:
+        while self.mode == RF69_MODE_SLEEP and self.readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY == 0x00:
             pass
         self.mode = newMode;
 
@@ -365,7 +365,7 @@ class Radio(object):
         #turn off receiver to prevent reception while filling fifo
         self._setMode(RF69_MODE_STANDBY)
         #wait for modeReady
-        while (self._readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00:
+        while (self.readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00:
             pass
         # DIO0 is "Packet Sent"
         self.writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_00)
@@ -397,9 +397,9 @@ class Radio(object):
         rssi = 0
         if forceTrigger:
             self.writeReg(REG_RSSICONFIG, RF_RSSI_START)
-            while self._readReg(REG_RSSICONFIG) & RF_RSSI_DONE == 0x00:
+            while self.readReg(REG_RSSICONFIG) & RF_RSSI_DONE == 0x00:
                 pass
-        rssi = self._readReg(REG_RSSIVALUE) * -1
+        rssi = self.readReg(REG_RSSIVALUE) * -1
         rssi = rssi >> 1
         return rssi
 
@@ -407,11 +407,11 @@ class Radio(object):
         self._setMode(RF69_MODE_STANDBY)
         if key != 0 and len(key) == 16:
             self.spi.xfer([REG_AESKEY1 | 0x80] + [int(ord(i)) for i in list(key)])
-            self.writeReg(REG_PACKETCONFIG2,(self._readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_ON)
+            self.writeReg(REG_PACKETCONFIG2,(self.readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_ON)
         else:
-            self.writeReg(REG_PACKETCONFIG2,(self._readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_OFF)
+            self.writeReg(REG_PACKETCONFIG2,(self.readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_OFF)
 
-    def _readReg(self, addr):
+    def readReg(self, addr):
         return self.spi.xfer([addr & 0x7F, 0])[1]
 
     def writeReg(self, addr, value):
@@ -424,7 +424,7 @@ class Radio(object):
         if onOff:
             self.writeReg(REG_OCP, RF_OCP_OFF)
             #enable P1 & P2 amplifier stages
-            self.writeReg(REG_PALEVEL, (self._readReg(REG_PALEVEL) & 0x1F) | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_ON)
+            self.writeReg(REG_PALEVEL, (self.readReg(REG_PALEVEL) & 0x1F) | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_ON)
         else:
             self.writeReg(REG_OCP, RF_OCP_ON)
             #enable P0 only
@@ -481,7 +481,7 @@ class Radio(object):
         self.intLock = True
         self.sendLock = False
 
-        if self.mode == RF69_MODE_RX and self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY:
+        if self.mode == RF69_MODE_RX and self.readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY:
             self._setMode(RF69_MODE_STANDBY)
 
             payload_length, target_id, sender_id, CTLbyte = self.spi.xfer2([REG_FIFO & 0x7f,0,0,0,0])[1:]
