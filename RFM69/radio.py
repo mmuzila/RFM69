@@ -63,7 +63,7 @@ class Radio(object):
         self._init_gpio()
         self._reset_radio()
         self._set_config(get_config(freqBand, networkID, nodeID))
-        self.encrypt(kwargs.get('encryptionKey', 0))
+        self.setEncrypt(kwargs.get('encryptionKey', None))
         self.setHighPower(self.isRFM69HW)
         self.set_power_level(kwargs.get('power', 70))
 
@@ -406,13 +406,23 @@ class Radio(object):
         rssi = rssi >> 1
         return rssi
 
-    def encrypt(self, key):
+    def setEncrypt(self, key):
         self._setMode(RF69_MODE_STANDBY)
-        if key != 0 and len(key) == 16:
-            self.spi.xfer([REG_AESKEY1 | 0x80] + [int(ord(i)) for i in list(key)])
-            self.writeReg(REG_PACKETCONFIG2,(self.readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_ON)
-        else:
-            self.writeReg(REG_PACKETCONFIG2,(self.readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_OFF)
+
+        if key is not None and not isinstance(key, bytes):
+            raise ValueError("Key must be either None or bytes")
+
+        if key is None:
+            self.writeReg(REG_PACKETCONFIG2,\
+                    (self.readReg(REG_PACKETCONFIG2) & 0xFE)\
+                    |RF_PACKET2_AES_OFF)
+            return
+        if len(key) != 16:
+            raise ValueError("Key must be 16 bytes long")
+
+        self.spi.xfer([REG_AESKEY1 | 0x80] + [int(i) for i in list(key)])
+        self.writeReg(REG_PACKETCONFIG2,\
+                (self.readReg(REG_PACKETCONFIG2) & 0xFE)| RF_PACKET2_AES_ON)
 
     def readReg(self, addr):
         return self.spi.xfer([addr & 0x7F, 0])[1]
