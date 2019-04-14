@@ -336,9 +336,12 @@ class Radio(object):
             pass
         self.mode = newMode;
 
-    def _setAddress(self, addr):
+    def setAddress(self, addr):
         self.address = addr
         self.writeReg(REG_NODEADRS, self.address)
+
+    def setNetwork(self, network):
+        self.writeReg(REG_SYNCVALUE2, network)
 
     def _canSend(self):
         if self.mode == RF69_MODE_STANDBY:
