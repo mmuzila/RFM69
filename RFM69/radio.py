@@ -62,7 +62,7 @@ class Radio(object):
         self._init_spi()
         self._init_gpio()
         self._reset_radio()
-        self._set_config(get_config(freqBand, networkID))
+        self._set_config(get_config(freqBand, networkID, nodeID))
         self._encrypt(kwargs.get('encryptionKey', 0))
         self._setHighPower(self.isRFM69HW)
         self.set_power_level(kwargs.get('power', 70))
