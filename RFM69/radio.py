@@ -14,7 +14,7 @@ class Radio(object):
 
         An RFM69 module is expected to be connected to the SPI interface of the Raspberry Pi. The class is as a context manager so you can instantiate it using the 'with' keyword.
 
-        Args: 
+        Args:
             freqBand: Frequency band of radio - 315MHz, 868Mhz, 433MHz or 915MHz.
             nodeID (int): The node ID of this device.
             networkID (int): The network ID
@@ -45,20 +45,20 @@ class Radio(object):
         self.spiBus = kwargs.get('spiBus', 0)
         self.spiDevice = kwargs.get('spiDevice', 0)
         self.promiscuousMode = kwargs.get('promiscuousMode', 0)
-        
+
         self.intLock = False
         self.sendLock = False
         self.mode = ""
         self.mode_name = ""
-        
+
 
         self.sendSleepTime = 0.05
 
-        # 
+        #
         self.packets = []
         self.acks = {}
         #
-        #         
+        #
         self._init_spi()
         self._init_gpio()
         self._reset_radio()
@@ -111,9 +111,9 @@ class Radio(object):
         GPIO.add_event_detect(self.intPin, GPIO.RISING, callback=self._interruptHandler)
 
 
-    # 
+    #
     # End of Init
-    # 
+    #
 
     def __enter__(self):
         """When the context begins"""
@@ -124,8 +124,8 @@ class Radio(object):
 
     def __exit__(self, *args):
         """When context exits (including when the script is terminated)"""
-        self._shutdown()     
-       
+        self._shutdown()
+
     def set_frequency(self, FRF):
         """Set the radio frequency"""
         self._writeReg(REG_FRFMSB, FRF >> 16)
@@ -138,7 +138,7 @@ class Radio(object):
 
     def set_network(self, network_id):
         """Set the network ID (sync)
-        
+
         Args:
             network_id (int): Value between 1 and 254.
 
@@ -149,7 +149,7 @@ class Radio(object):
 
     def set_power_level(self, percent):
         """Set the transmit power level
-        
+
         Args:
             percent (int): Value between 0 and 100.
 
@@ -171,7 +171,7 @@ class Radio(object):
         """Broadcast a message to network i.e. sends to node 255 with no ACK request.
 
         Args:
-            buff (str): Message buffer to send 
+            buff (str): Message buffer to send
 
         """
 
@@ -180,18 +180,18 @@ class Radio(object):
 
     def send(self, toAddress, buff = "", **kwargs):
         """Send a message
-        
+
         Args:
             toAddress (int): Recipient node's ID
-            buff (str): Message buffer to send 
-        
+            buff (str): Message buffer to send
+
         Keyword Args:
             attempts (int): Number of attempts
             wait (int): Milliseconds to wait for acknowledgement
             require_ack(bool): Require Acknowledgement. If Attempts > 1 this is auto set to True.
         Returns:
             bool: If acknowledgement received or None is no acknowledgement requested
-        
+
         """
 
         attempts = kwargs.get('attempts', 3)
@@ -217,7 +217,7 @@ class Radio(object):
 
     def read_temperature(self, calFactor=0):
         """Read the temperature of the radios CMOS chip.
-        
+
         Args:
             calFactor: Additional correction to corrects the slope, rising temp = rising val
 
@@ -235,7 +235,7 @@ class Radio(object):
 
     def calibrate_radio(self):
         """Calibrate the internal RC oscillator for use in wide temperature variations.
-        
+
         See RFM69 datasheet section [4.3.5. RC Timer Accuracy] for more information.
         """
         self._writeReg(REG_OSC1, RF_OSC1_RCCAL_START)
@@ -285,11 +285,11 @@ class Radio(object):
         self.packets = []
         return packets
 
-   
+
     def send_ack(self, toAddress, buff = ""):
         """Send an acknowledgemet packet
 
-        Args: 
+        Args:
             toAddress (int): Recipient node's ID
 
         """
@@ -298,9 +298,9 @@ class Radio(object):
         self._sendFrame(toAddress, buff, False, True)
 
 
-    # 
+    #
     # Internal functions
-    # 
+    #
 
     def _setMode(self, newMode):
         if newMode == self.mode:
@@ -356,7 +356,7 @@ class Radio(object):
         #     return (self.SENDERID == fromNodeID or fromNodeID == RF69_BROADCAST_ADDR) and self.ACK_RECEIVED
         # return False
 
-    
+
 
     def _sendFrame(self, toAddress, buff, requestACK, sendACK):
         #turn off receiver to prevent reception while filling fifo
@@ -464,14 +464,14 @@ class Radio(object):
     def _debug(self, *args):
         if self.logger is not None:
              self.logger.debug(*args)
-      
+
     def _error(self, *args):
         if self.logger is not None:
              self.logger.error(*args)
- 
-    # 
+
+    #
     # Radio interrupt handler
-    # 
+    #
 
     def _interruptHandler(self, pin):
         self.intLock = True
@@ -479,9 +479,9 @@ class Radio(object):
 
         if self.mode == RF69_MODE_RX and self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY:
             self._setMode(RF69_MODE_STANDBY)
-        
+
             payload_length, target_id, sender_id, CTLbyte = self.spi.xfer2([REG_FIFO & 0x7f,0,0,0,0])[1:]
-        
+
             if payload_length > 66:
                 payload_length = 66
 
@@ -502,7 +502,7 @@ class Radio(object):
                 self._debug(sender_id)
                 # Record acknowledgement
                 self.acks.setdefault(sender_id, 1)
-         
+
             elif ack_requested:
                 self._debug("replying to ack request")
             else:
@@ -519,6 +519,6 @@ class Radio(object):
             if ack_requested and self.auto_acknowledge:
                 self.intLock = False
                 self.send_ack(sender_id)
-             
+
         self.intLock = False
         self.begin_receive()
