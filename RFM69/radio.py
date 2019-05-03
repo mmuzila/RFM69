@@ -277,13 +277,20 @@ class Radio(object):
         """
         return len(self.packets) > 0
 
+    def get_packet(self):
+
+        try:
+            return self.packets.pop(0)
+        except IndexError as e:
+            return None
+
+
     def get_packets(self):
         """Get newly received packets.
 
         Returns:
             list: Returns a list of RFM69.Packet objects.
         """
-        # Create packet
         packets = list(self.packets)
         self.packets = []
         return packets
@@ -384,7 +391,7 @@ class Radio(object):
         if isinstance(buff, str):
             self.spi.xfer2([REG_FIFO | 0x80, len(buff) + 3, toAddress, self.address, ack] + [int(ord(i)) for i in list(buff)])
         else:
-            self.spi.xfer2([REG_FIFO | 0x80, len(buff) + 3, toAddress, self.address, ack] + buff)
+            self.spi.xfer2([REG_FIFO | 0x80, len(buff) + 3, toAddress, self.address, ack] + list(buff))
 
         self.sendLock = True
         self._setMode(RF69_MODE_TX)
