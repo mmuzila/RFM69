@@ -16,7 +16,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 # Fields marked as "Optional" may be commented out.
 
 setup(
-    name='rpi-rfm69',  # Required
+    name='rpi-mmuzila-rfm69',  # Required
     # https://packaging.python.org/en/latest/single_source_version.html
     version='0.2.0b',  # Required
     # https://packaging.python.org/specifications/core-metadata/#summary
@@ -26,7 +26,7 @@ setup(
     # https://packaging.python.org/specifications/core-metadata/#description-content-type-optional
     long_description_content_type='text/markdown',  # Optional (see note above)
     # https://packaging.python.org/specifications/core-metadata/#home-page-optional
-    url='http://github.com/jkittley/RFM69',  # Optional
+    url='http://github.com/mmuzila/RFM69',  # Optional
     # This should be your name or the name of the organization which owns the project
     author='Jacob Kittley-Davies',  # Optional
     # This should be a valid email address corresponding to the author listed above.
@@ -129,9 +129,9 @@ setup(
     # maintainers, and where to support the project financially. The key is
     # what's used to render the link text on PyPI.
     project_urls={  # Optional
-        'Bug Reports': 'http://github.com/jkittley/RFM69/issues',
-        'Source': 'http://github.com/jkittley/RFM69',
+        'Bug Reports': 'http://github.com/mmuzila/RFM69/issues',
+        'Source': 'http://github.com/mmuzila/RFM69',
         'Documentation': 'http://rpi-rfm69.readthedocs.io/',
-        'Tracker': 'http://github.com/jkittley/RFM69/issues',
+        'Tracker': 'http://github.com/mmuzila/RFM69/issues',
     },
 )
