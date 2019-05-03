@@ -45,10 +45,10 @@ def get_config(freqBand, networkID, nodeID):
           #NETWORK ID
           0x30: [REG_SYNCVALUE2, networkID],
           0x37: [REG_PACKETCONFIG1, RF_PACKET1_FORMAT_VARIABLE | RF_PACKET1_DCFREE_OFF |
-                RF_PACKET1_CRC_ON | RF_PACKET1_CRCAUTOCLEAR_ON | RF_PACKET1_ADRSFILTERING_OFF],
+                RF_PACKET1_CRC_ON | RF_PACKET1_CRCAUTOCLEAR_ON | RF_PACKET1_ADRSFILTERING_NODE],
           #in variable length mode: the max frame size, not used in TX
           0x38: [REG_PAYLOADLENGTH, 66],
-          0x39: { REG_NODEADRS, nodeID },
+          0x39: [ REG_NODEADRS, nodeID ],
           #TX on FIFO not empty
           0x3C: [REG_FIFOTHRESH, RF_FIFOTHRESH_TXSTART_FIFONOTEMPTY | RF_FIFOTHRESH_VALUE],
           #RXRESTARTDELAY must match transmitter PA ramp-down time (bitrate dependent)
